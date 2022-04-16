@@ -54,21 +54,7 @@ int main() {
     if (csvType == "IO") {
         cout << "IO-type CSV detected... Initializing Race Track" << endl;
         RaceTrackIO currentTrack(fileIn);
-        cout << endl;
-        for (const auto &curPt : currentTrack.getCenterLine()) {
-            cout << curPt.x << " " << curPt.y << endl;
-        }
-        cout << currentTrack.getCenterLine().size() << endl;
-
-        for (const auto &curWdth : currentTrack.getCenterWidths()) {
-            cout << curWdth.inner << " " << curWdth.outer << endl;
-        }
-
         currentTrack.optimizeRaceLineCurvature(500, 1e-12);
-
-        for (const auto &trackNode : currentTrack.getRaceLine()) {
-            cout << trackNode.x << " " << trackNode.y << endl;
-        }
 
         ofstream fileOut;
         fileOut.open("oblongOut.csv");

@@ -61,11 +61,6 @@ public:
         };
     };
 
-    struct Widths {
-        double outer = 0, inner = 0;
-        Widths(const double &outIn = 0.0, const double &inIn = 0.0) : outer(outIn), inner(inIn){};
-    };
-
     struct LaneBoundary {
         Coordinate interiorPoint = {0, 0}, exteriorPoint = {0, 0};
         LaneBoundary(Coordinate interiorIn = {0, 0}, Coordinate exteriorIn = {0, 0}) : interiorPoint(interiorIn), exteriorPoint(exteriorIn){};
@@ -75,7 +70,7 @@ public:
         Coordinate chordDirection = {0, 0};
         double chordLength = 0;
         ChordVector(const Coordinate &directionVector = {0, 0}, const double &length = 0.0) : chordDirection(directionVector), chordLength(length){};
-        Coordinate ChordVector::alongBy(const double &mult) {
+        Coordinate ChordVector::alongBy(const double &mult) const {
             return chordDirection * chordLength * mult;
         };
     };
@@ -87,26 +82,21 @@ public:
     // Debug functions
     std::vector<Coordinate> getRaceLine() const;
     std::vector<Coordinate> getCenterLine() const;
-    std::vector<Widths> getCenterWidths() const;
 
 private:
-    double curvatureCalculation(const std::vector<RaceTrack::Coordinate> &ambientPoints, const RaceTrack::Coordinate &interestPoint) const;
+    double curvatureCalculation(const std::vector<const Coordinate *> ambientPoints, const Coordinate *interestPoint) const;
     double mBufferSize = 0.1;
 
-protected:
-    std::vector<double> computeBisectionCoeffs(const double &coeffOne, const double &coeffTwo) const;
-
-    std::vector<Coordinate> getAmbientPoints(const size_t &nIdx) const;
-    Coordinate getNode(const size_t &nIdx) const;
-    Widths getNodeWidths(const size_t &nIdx) const;
+    std::vector<const Coordinate *> getAmbientPoints(const size_t &nIdx) const;
+    const Coordinate *getNode(const size_t &nIdx) const;
     size_t getNumNodes() const;
-    ChordVector getChordVector(const size_t &nIdx) const;
-    LaneBoundary getLaneBounds(const size_t &nIdx) const;
+    const ChordVector *getChordVector(const size_t &nIdx) const;
+    const LaneBoundary *getLaneBounds(const size_t &nIdx) const;
 
+protected:
     void setNode(const size_t &nIdx, const Coordinate &nodeValue);
 
     std::vector<Coordinate> mCenterLine = {};
-    std::vector<Widths> mCenterWidths = {};
     std::vector<ChordVector> mChordVectors = {};
     std::vector<LaneBoundary> mLaneBounds = {};
     std::vector<Coordinate> mRaceLine = {};
@@ -121,24 +111,20 @@ inline void RaceTrack::setNode(const size_t &nIdx, const RaceTrack::Coordinate &
     mRaceLine.at(nIdx) = nodeValue;
 }
 
-inline RaceTrack::LaneBoundary RaceTrack::getLaneBounds(const size_t &nIdx) const {
-    return mLaneBounds.at(nIdx);
+inline const RaceTrack::LaneBoundary* RaceTrack::getLaneBounds(const size_t &nIdx) const {
+    return &mLaneBounds.at(nIdx);
 }
 
-inline RaceTrack::Coordinate RaceTrack::getNode(const size_t &nIdx) const {
-    return mRaceLine.at(nIdx);
-}
-
-inline RaceTrack::Widths RaceTrack::getNodeWidths(const size_t &nIdx) const {
-    return mCenterWidths.at(nIdx);
+inline const RaceTrack::Coordinate *RaceTrack::getNode(const size_t &nIdx) const {
+    return &mRaceLine.at(nIdx);
 }
 
 inline size_t RaceTrack::getNumNodes() const {
     return mCenterLine.size();
 }
 
-inline RaceTrack::ChordVector RaceTrack::getChordVector(const size_t &nIdx) const {
-    return mChordVectors.at(nIdx);
+inline const RaceTrack::ChordVector* RaceTrack::getChordVector(const size_t &nIdx) const {
+    return &mChordVectors.at(nIdx);
 }
 
 inline std::vector<RaceTrack::Coordinate> RaceTrack::getRaceLine() const {
@@ -147,8 +133,4 @@ inline std::vector<RaceTrack::Coordinate> RaceTrack::getRaceLine() const {
 
 inline std::vector<RaceTrack::Coordinate> RaceTrack::getCenterLine() const {
     return mCenterLine;
-}
-
-inline std::vector<RaceTrack::Widths> RaceTrack::getCenterWidths() const {
-    return mCenterWidths;
 }

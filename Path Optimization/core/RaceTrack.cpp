@@ -11,25 +11,23 @@ void RaceTrack::optimizeRaceLineCurvature(const int &maximumIterations, const do
 
     while (dK > minimumDK && iterations < maximumIterations) {
         for (size_t nodeIdx = 0; nodeIdx < numberOfNodes; ++nodeIdx) {
-            LaneBoundary localBounds = getLaneBounds(nodeIdx);
-            ChordVector localChord = getChordVector(nodeIdx);
-            std::vector<Coordinate> relevantNodes = getAmbientPoints(nodeIdx);
+            const LaneBoundary* localBounds = getLaneBounds(nodeIdx);
+            const ChordVector* localChord = getChordVector(nodeIdx);
+            std::vector<const Coordinate *> relevantNodes = getAmbientPoints(nodeIdx);
 
-            std::vector<double> bisectionCoefficients = computeBisectionCoeffs(mBufferSize, 1 - mBufferSize);
-
-            Coordinate interestPoint = localBounds.interiorPoint;
+            Coordinate interestPoint = localBounds->interiorPoint;
 
             double localKShift = 1e3, localKPrev = 1e3;
             int localIterations = 0;
             std::vector<double> kVals;
             double coeff = mBufferSize;
             while (coeff <= 1 - mBufferSize && localIterations <= 100) {
-                kVals.emplace_back(curvatureCalculation(relevantNodes, interestPoint + localChord.alongBy(coeff)));
+                kVals.emplace_back(curvatureCalculation(relevantNodes, &(interestPoint + localChord->alongBy(coeff))));
                 coeff += 0.01;
             }
             size_t numIncrements = std::distance(kVals.begin(), std::min_element(kVals.begin(), kVals.end()));
-            setNode(nodeIdx, interestPoint + localChord.alongBy(mBufferSize + 0.01 * numIncrements));
-       }
+            setNode(nodeIdx, interestPoint + localChord->alongBy(mBufferSize + 0.01 * numIncrements));
+        }
 
         double kCur = 0;
         for (size_t nIdx = 0; nIdx < numberOfNodes; ++nIdx) {
@@ -44,7 +42,6 @@ void RaceTrack::optimizeRaceLineCurvature(const int &maximumIterations, const do
 
 RaceTrackIO::RaceTrackIO(std::ifstream &fileIn) {
     std::vector<Coordinate> centerLineOut;
-    std::vector<Widths> centerWidthsOut;
     std::vector<ChordVector> chordVectorsOut;
     std::vector<LaneBoundary> laneBoundsOut;
 
@@ -71,9 +68,6 @@ RaceTrackIO::RaceTrackIO(std::ifstream &fileIn) {
         centerPoint = (laneBound.interiorPoint + laneBound.exteriorPoint) / 2;
         centerLineOut.push_back(centerPoint);
 
-        centerWidthsOut.push_back(Widths(Coordinate::distance(laneBound.exteriorPoint, centerPoint),
-                                         Coordinate::distance(centerPoint, laneBound.interiorPoint)));
-
         Coordinate chordDirection = Coordinate::normalize(laneBound.exteriorPoint - laneBound.interiorPoint);
         double chordLength = Coordinate::distance(laneBound.exteriorPoint, laneBound.interiorPoint);
         chordVectorsOut.push_back(ChordVector(chordDirection, chordLength));
@@ -81,27 +75,20 @@ RaceTrackIO::RaceTrackIO(std::ifstream &fileIn) {
 
     if (centerLineOut.front() == centerLineOut.back()) {
         centerLineOut.pop_back();
-        centerWidthsOut.pop_back();
         chordVectorsOut.pop_back();
     }
 
-    mCenterLine = centerLineOut;
-    mCenterWidths = centerWidthsOut;
-    mChordVectors = chordVectorsOut;
-    mLaneBounds = laneBoundsOut;
-    mRaceLine = centerLineOut;
+    std::move(centerLineOut.begin(), centerLineOut.end(), std::back_inserter(mCenterLine));
+    std::move(chordVectorsOut.begin(), chordVectorsOut.end(), std::back_inserter(mChordVectors));
+    std::move(laneBoundsOut.begin(), laneBoundsOut.end(), std::back_inserter(mLaneBounds));
+    std::move(centerLineOut.begin(), centerLineOut.end(), std::back_inserter(mRaceLine));
 }
 
-std::vector<double> RaceTrack::computeBisectionCoeffs(const double &coeffOne, const double &coeffTwo) const {
-    double offset = (coeffTwo - coeffOne) / 3;
-    return {coeffOne, coeffOne + offset, coeffTwo - offset, coeffTwo};
-}
-
-double RaceTrack::curvatureCalculation(const std::vector<Coordinate> &ambientPoints, const Coordinate &interestPoint) const {
-    Coordinate dRdsM2 = Coordinate::normalize(ambientPoints[1] - ambientPoints[0]);
-    Coordinate dRdsM1 = Coordinate::normalize(interestPoint - ambientPoints[1]);
-    Coordinate dRdsP1 = Coordinate::normalize(ambientPoints[2] - interestPoint);
-    Coordinate dRdsP2 = Coordinate::normalize(ambientPoints[3] - ambientPoints[2]);
+double RaceTrack::curvatureCalculation(const std::vector<const Coordinate *> ambientPoints, const Coordinate *interestPoint) const {
+    Coordinate dRdsM2 = Coordinate::normalize(*ambientPoints[1] - *ambientPoints[0]);
+    Coordinate dRdsM1 = Coordinate::normalize(*interestPoint - *ambientPoints[1]);
+    Coordinate dRdsP1 = Coordinate::normalize(*ambientPoints[2] - *interestPoint);
+    Coordinate dRdsP2 = Coordinate::normalize(*ambientPoints[3] - *ambientPoints[2]);
 
     Coordinate dTdsM1 = dRdsM1 - dRdsM2;
     Coordinate dTdsC = dRdsP1 - dRdsM1;
@@ -110,8 +97,8 @@ double RaceTrack::curvatureCalculation(const std::vector<Coordinate> &ambientPoi
     return 0.5 * Coordinate::length(dTdsM1) + Coordinate::length(dTdsC) + 0.5 * Coordinate::length(dTdsP1);
 }
 
-std::vector<RaceTrack::Coordinate> RaceTrack::getAmbientPoints(const size_t &nIdx) const {
-    std::vector<RaceTrack::Coordinate> out(4);
+std::vector<const RaceTrack::Coordinate *> RaceTrack::getAmbientPoints(const size_t &nIdx) const {
+    std::vector<const RaceTrack::Coordinate *> out(4);
     size_t numNodes = getNumNodes();
     if (nIdx == 0) {
         out[0] = getNode(numNodes - 2);
