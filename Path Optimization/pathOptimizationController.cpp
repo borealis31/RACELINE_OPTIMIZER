@@ -1,49 +1,46 @@
 
-#include "core/include/RaceTrack.hpp"
-#include <fstream>
+#include "include/RaceTrack.hpp"
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
-#include <vector>
-
-using namespace std;
 
 int main() {
 
-    vector<int> possibleTracks = {1, 2, 3};
-    cout << "Select a Track:" << endl
-         << "---------------" << endl;
-    cout << "1. Oblong Test" << endl
-         << "2. Kidney Bean Test" << endl
-         << "3. Montreal" << endl;
+    std::vector<int> possibleTracks = {1, 2, 3};
+    std::cout << "Select a Track:" << std::endl
+              << "---------------" << std::endl;
+    std::cout << "1. Oblong Test" << std::endl
+              << "2. Kidney Bean Test" << std::endl
+              << "3. Montreal" << std::endl;
 
     int input;
 
     do {
-        cin >> input;
-    } while (std::find(possibleTracks.begin(), possibleTracks.end(), static_cast<int>(input)) == possibleTracks.end());
-
-    ifstream fileIn;
+        std::cin >> input;
+    } while (std::find(possibleTracks.begin(), possibleTracks.end(), 1) == possibleTracks.end());
+    std::ifstream fileIn;
 
     switch (input) {
     case 1:
         fileIn.open("raceTrackCSVs/oblongBounds.csv");
-        cout << "Oblong Testing Track Selected" << endl;
+        std::cout << "Oblong Testing Track Selected" << std::endl;
         break;
     case 2:
         fileIn.open("raceTrackCSVs/kidneyBeanBounds.csv");
-        cout << "Kidney Bean Testing Track Selected" << endl;
+        std::cout << "Kidney Bean Testing Track Selected" << std::endl;
         break;
     case 3:
         fileIn.open("raceTrackCSVs/montrealBounds.csv");
-        cout << "Montreal Track Selected" << endl;
+        std::cout << "Montreal Track Selected" << std::endl;
         break;
     default:
-        cout << "ERROR: No Track File Associated With This TrackID" << endl;
+        std::cout << "ERROR: No Track File Associated With This TrackID" << std::endl;
         break;
     }
 
     if (!fileIn.is_open()) {
-        cout << "ERROR: Track File Not Found" << endl;
+        std::cout << "ERROR: Track File Not Found" << std::endl;
         system("PAUSE");
         return EXIT_FAILURE;
     }
@@ -52,24 +49,25 @@ int main() {
     fileIn >> csvType;
 
     if (csvType == "IO") {
-        cout << "IO-type CSV detected... Initializing Race Track" << endl;
+        std::cout << "IO-type CSV detected... Initializing Race Track" << std::endl;
         RaceTrackIO currentTrack(fileIn);
         currentTrack.optimizeRaceLineCurvature(500, 1e-12);
-
-        ofstream fileOut;
-        fileOut.open("oblongOut.csv");
-        for (const auto &trackNode : currentTrack.getRaceLine()) {
-            fileOut << trackNode.x << "," << trackNode.y << "\n";
-        }
-        fileOut.close();
+        currentTrack.plotRaceLine();
+        
+        // std::ofstream fileOut;
+        // fileOut.open("oblongOut.csv");
+        // for (const auto &trackNode : currentTrack.getRaceLine()) {
+        //     fileOut << trackNode.x << "," << trackNode.y << "\n";
+        // }
+        // fileOut.close();
     }
 
     fileIn.close();
     if (fileIn.is_open()) {
-        cout << "WARNING: File was not Properly Closed" << endl;
+        std::cout << "WARNING: File was not Properly Closed" << std::endl;
     }
 
-    cout << "Program Complete" << endl;
+    std::cout << "Program Complete" << std::endl;
     system("PAUSE");
     return EXIT_SUCCESS;
 }

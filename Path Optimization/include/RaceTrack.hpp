@@ -1,11 +1,10 @@
 #pragma once
 
+#include "MatlabEngine.hpp"
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <string>
 #include <vector>
 
 class RaceTrack {
@@ -16,7 +15,7 @@ public:
         Coordinate(double xIn = 0, double yIn = 0) : x(xIn), y(yIn){};
 
         bool operator==(const Coordinate &coord) const {
-            return x == coord.x && y == coord.y;
+            return (abs(x - coord.x) <= 1e-3 && abs(y - coord.y) <= 1e-3);
         };
 
         Coordinate operator+(const Coordinate &coord) const {
@@ -40,23 +39,23 @@ public:
         };
 
         Coordinate operator^(const double &powr) const {
-            Coordinate out(pow(x, powr), pow(y, powr));
+            Coordinate out(std::pow(x, powr), std::pow(y, powr));
             return out;
         };
 
-        static double Coordinate::sum(const Coordinate &coord) {
+        static double sum(const Coordinate &coord) {
             return coord.x + coord.y;
         };
 
-        static double Coordinate::distance(const Coordinate &coordTO, const Coordinate &coordFROM) {
+        static double distance(const Coordinate &coordTO, const Coordinate &coordFROM) {
             return sqrt(Coordinate::sum((coordTO - coordFROM) ^ 2));
         };
 
-        static double Coordinate::length(const Coordinate &coordVector) {
+        static double length(const Coordinate &coordVector) {
             return sqrt(Coordinate::sum(coordVector ^ 2));
         };
 
-        static Coordinate Coordinate::normalize(const Coordinate &coordVector) {
+        static Coordinate normalize(const Coordinate &coordVector) {
             return coordVector / Coordinate::length(coordVector);
         };
     };
@@ -70,7 +69,7 @@ public:
         Coordinate chordDirection = {0, 0};
         double chordLength = 0;
         ChordVector(const Coordinate &directionVector = {0, 0}, const double &length = 0.0) : chordDirection(directionVector), chordLength(length){};
-        Coordinate ChordVector::alongBy(const double &mult) const {
+        Coordinate alongBy(const double &mult) const {
             return chordDirection * chordLength * mult;
         };
     };
@@ -78,6 +77,7 @@ public:
     RaceTrack(){};
 
     void optimizeRaceLineCurvature(const int &maximumIterations, const double &minimumDK);
+    void plotRaceLine() const;
 
     // Debug functions
     std::vector<Coordinate> getRaceLine() const;
@@ -88,14 +88,15 @@ private:
     double mBufferSize = 0.1;
 
     std::vector<const Coordinate *> getAmbientPoints(const size_t &nIdx) const;
-    const Coordinate *getNode(const size_t &nIdx) const;
-    size_t getNumNodes() const;
+    const Coordinate *getCenterNode(const size_t &nIdx) const;
     const ChordVector *getChordVector(const size_t &nIdx) const;
     const LaneBoundary *getLaneBounds(const size_t &nIdx) const;
-
-protected:
+    const Coordinate *getNode(const size_t &nIdx) const;
+    size_t getNumNodes() const;
     void setNode(const size_t &nIdx, const Coordinate &nodeValue);
 
+protected:
+    std::unique_ptr<matlab::engine::MATLABEngine> mMATLABEngine = nullptr;
     std::vector<Coordinate> mCenterLine = {};
     std::vector<ChordVector> mChordVectors = {};
     std::vector<LaneBoundary> mLaneBounds = {};
@@ -111,7 +112,7 @@ inline void RaceTrack::setNode(const size_t &nIdx, const RaceTrack::Coordinate &
     mRaceLine.at(nIdx) = nodeValue;
 }
 
-inline const RaceTrack::LaneBoundary* RaceTrack::getLaneBounds(const size_t &nIdx) const {
+inline const RaceTrack::LaneBoundary *RaceTrack::getLaneBounds(const size_t &nIdx) const {
     return &mLaneBounds.at(nIdx);
 }
 
@@ -123,7 +124,11 @@ inline size_t RaceTrack::getNumNodes() const {
     return mCenterLine.size();
 }
 
-inline const RaceTrack::ChordVector* RaceTrack::getChordVector(const size_t &nIdx) const {
+inline const RaceTrack::Coordinate *RaceTrack::getCenterNode(const size_t &nIdx) const {
+    return &mCenterLine.at(nIdx);
+}
+
+inline const RaceTrack::ChordVector *RaceTrack::getChordVector(const size_t &nIdx) const {
     return &mChordVectors.at(nIdx);
 }
 
