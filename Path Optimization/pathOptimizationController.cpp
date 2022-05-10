@@ -1,5 +1,5 @@
 
-#include "include/RaceTrack.hpp"
+#include "core/include/RaceTrack.hpp"
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -15,7 +15,6 @@ int main() {
               << "3. Montreal" << std::endl;
 
     int input;
-
     do {
         std::cin >> input;
     } while (std::find(possibleTracks.begin(), possibleTracks.end(), 1) == possibleTracks.end());
@@ -53,7 +52,7 @@ int main() {
         RaceTrackIO currentTrack(fileIn);
         currentTrack.optimizeRaceLineCurvature(500, 1e-12);
         currentTrack.plotRaceLine();
-        
+
         // std::ofstream fileOut;
         // fileOut.open("oblongOut.csv");
         // for (const auto &trackNode : currentTrack.getRaceLine()) {
